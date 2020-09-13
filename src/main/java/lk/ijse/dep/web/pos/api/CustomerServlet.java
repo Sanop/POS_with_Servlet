@@ -35,14 +35,16 @@ public class CustomerServlet extends HttpServlet {
         }
         response.setContentType("text/plain");
         try (PrintWriter out = response.getWriter()) {
-            CustomerDTO customer = customerBO.getCustomer(id);
-            if (customer == null) {
-                customerBO.saveCustomer(id, name, address);
-                response.setStatus(HttpServletResponse.SC_CREATED);
-                out.println("Customer has Been Saved Successfully");
-                return;
+            List<CustomerDTO> allCustomers = customerBO.getAllCustomers();
+            for (CustomerDTO customer : allCustomers) {
+                if(id.equals(customer.getId())){
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                    return;
+                }
             }
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            customerBO.saveCustomer(id,name,address);
+            out.println("Success fully Deleted");
+            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
@@ -77,6 +79,7 @@ public class CustomerServlet extends HttpServlet {
         while ((line = reader.readLine()) != null) {
             requestBody += line;
         }
+
         String id = method(requestBody, "id");
         String name = method(requestBody, "name");
         String address = method(requestBody, "address");
@@ -85,16 +88,22 @@ public class CustomerServlet extends HttpServlet {
         System.out.println("Customer Name :" + name);
         System.out.println("Customer Address :" + address);
 
-        if (!(id.matches("C\\d{3}")) || name.trim().length() < 3 || address.trim().length() < 3) {
+        if ( name.trim().length() < 3 || address.trim().length() < 3) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
         resp.setContentType("text/plain");
         try {
-            customerBO.getCustomer(id);
-            customerBO.updateCustomer(name, address, id);
-            resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
-            System.out.println("Customer has Been Updated Successfully");
+            List<CustomerDTO> allCustomers = customerBO.getAllCustomers();
+            for (CustomerDTO customer : allCustomers) {
+                if(id.equals(customer.getId())){
+                    customerBO.updateCustomer(name, address, id);
+                    resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                    System.out.println("Customer has Been Updated Successfully");
+                    return;
+                }
+            }
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         } catch (NoSuchFieldException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
